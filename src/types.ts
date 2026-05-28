@@ -11,6 +11,13 @@ export interface GithubRepoMetadata {
   private: boolean;
 }
 
+export interface GitTreeFile {
+  path: string;
+  size: number;
+  sha: string;
+  url: string;
+}
+
 export interface ArchiveFile {
   path: string;
   size: number;
@@ -33,6 +40,8 @@ export interface BundleResult {
   includedCount: number;
   skippedCount: number;
   bytes: number;
+  estimatedTokens: number;
+  warnings: string[];
 }
 
 export interface SkippedFile {
@@ -46,6 +55,16 @@ export interface IncludedFile {
   size: number;
   content: string;
   truncated: boolean;
+}
+
+export interface RepoFetchResult {
+  files: ArchiveFile[];
+  treePaths: string[];
+  skipped: SkippedFile[];
+  warnings: string[];
+  totalFileCount: number;
+  fetchedFileCount: number;
+  treeTruncated: boolean;
 }
 
 export type BackgroundRequest =

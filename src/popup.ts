@@ -2,6 +2,7 @@ import type { BackgroundRequest, BundleResult } from "./types";
 import "./styles.css";
 
 type BackgroundResponse<T> = T & { ok: boolean; error?: string };
+type UploadResponse = { ok?: boolean; error?: string };
 
 const tokenInput = getInput("token");
 const repoInput = getInput("repo");
@@ -28,7 +29,7 @@ async function init(): Promise<void> {
   detectBranchButton.addEventListener("click", () => void withStatusError(() => detectDefaultBranch()));
   buildBundleButton.addEventListener("click", () => void withStatusError(() => buildBundle()));
   uploadBundleButton.addEventListener("click", () => void withStatusError(() => uploadBundle()));
-  downloadBundleButton.addEventListener("click", () => downloadBundle());
+  downloadBundleButton.addEventListener("click", () => void withStatusError(async () => downloadBundle()));
 }
 
 async function saveToken(): Promise<void> {
@@ -46,7 +47,7 @@ async function clearToken(): Promise<void> {
 
 async function refreshTokenStatus(): Promise<void> {
   const response = await sendBackground<{ hasToken: boolean }>({ type: "GET_TOKEN_STATUS" });
-  tokenStatus.textContent = response.hasToken ? "Token saved locally." : "No token saved. Public repos may still work.";
+  tokenStatus.textContent = response.hasToken ? "Token saved locally." : "No token saved. Public repos may still work, but file depth is capped.";
 }
 
 async function detectDefaultBranch(): Promise<void> {
@@ -65,8 +66,9 @@ async function detectDefaultBranch(): Promise<void> {
 
 async function buildBundle(): Promise<void> {
   setBusy(true);
+  clearCurrentBundle();
   try {
-    setStatus("Fetching repository archive and building context bundle...");
+    setStatus("Fetching GitHub file tree, selecting useful files, and building Markdown context...");
     const response = await sendBackground<{ bundle: BundleResult }>({
       type: "BUILD_BUNDLE",
       payload: {
@@ -79,8 +81,15 @@ async function buildBundle(): Promise<void> {
     uploadBundleButton.disabled = false;
     downloadBundleButton.disabled = false;
     bundleSummary.textContent = `${currentBundle.filename}
-${formatBytes(currentBundle.bytes)}. Included ${currentBundle.includedCount} files, skipped ${currentBundle.skippedCount}.`;
-    setStatus("Bundle built. Upload it to ChatGPT or download it.");
+${formatBytes(currentBundle.bytes)} · ~${currentBundle.estimatedTokens.toLocaleString()} tokens estimated
+Included ${currentBundle.includedCount} files · skipped/omitted ${currentBundle.skippedCount}${
+      currentBundle.warnings.length ? ` · ${currentBundle.warnings.length} warning(s)` : ""
+    }`;
+    setStatus([
+      "Bundle built.",
+      ...currentBundle.warnings.map((warning) => `Warning: ${warning}`),
+      "Upload to ChatGPT, or use Download and drag the file into the chat."
+    ].join("\n"));
   } finally {
     setBusy(false);
   }
@@ -94,29 +103,45 @@ async function uploadBundle(): Promise<void> {
     return;
   }
 
-  let response: { ok?: boolean; error?: string };
+  setBusy(true);
   try {
-    response = await chrome.tabs.sendMessage(tab.id, {
-      type: "ATTACH_REPO_BUNDLE",
-      filename: currentBundle.filename,
-      content: currentBundle.content
-    });
-  } catch (error) {
-    setStatus(
-      `Upload was blocked: ${error instanceof Error ? error.message : String(error)}. Use Download and drag the file into ChatGPT.`
-    );
-    return;
-  }
+    setStatus("Attempting direct attachment in the active ChatGPT tab...");
+    const response = await sendUploadMessage(tab.id, currentBundle);
 
-  if (response?.ok) {
-    setStatus("Bundle attached to ChatGPT.");
-    return;
-  }
+    if (response?.ok) {
+      setStatus("Bundle attached to ChatGPT.");
+      return;
+    }
 
-  setStatus(`Upload was blocked: ${response?.error ?? "unknown error"}. Use Download and drag the file into ChatGPT.`);
+    setStatus(`Upload was not verified: ${response?.error ?? "unknown error"}\nUse Download and drag the file into ChatGPT.`);
+  } finally {
+    setBusy(false);
+  }
 }
 
-function downloadBundle(): void {
+async function sendUploadMessage(tabId: number, bundle: BundleResult): Promise<UploadResponse> {
+  try {
+    return await chrome.tabs.sendMessage(tabId, {
+      type: "ATTACH_REPO_BUNDLE",
+      filename: bundle.filename,
+      content: bundle.content
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("Receiving end does not exist")) {
+      return { ok: false, error: message };
+    }
+
+    await chrome.scripting.executeScript({ target: { tabId }, files: ["contentScript.js"] });
+    return await chrome.tabs.sendMessage(tabId, {
+      type: "ATTACH_REPO_BUNDLE",
+      filename: bundle.filename,
+      content: bundle.content
+    });
+  }
+}
+
+async function downloadBundle(): Promise<void> {
   if (!currentBundle) return;
   const blob = new Blob([currentBundle.content], { type: "text/markdown" });
   const url = URL.createObjectURL(blob);
@@ -124,7 +149,7 @@ function downloadBundle(): void {
   anchor.href = url;
   anchor.download = currentBundle.filename;
   anchor.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 5_000);
   setStatus("Bundle downloaded. Drag it into ChatGPT if direct upload is blocked.");
 }
 
@@ -145,9 +170,17 @@ async function sendBackground<T>(request: BackgroundRequest): Promise<T> {
 }
 
 function setBusy(busy: boolean): void {
-  for (const button of [detectBranchButton, buildBundleButton, saveTokenButton, clearTokenButton]) {
-    button.disabled = busy;
+  for (const button of [detectBranchButton, buildBundleButton, saveTokenButton, clearTokenButton, uploadBundleButton]) {
+    button.disabled = busy || (button === uploadBundleButton && !currentBundle);
   }
+  downloadBundleButton.disabled = busy || !currentBundle;
+}
+
+function clearCurrentBundle(): void {
+  currentBundle = null;
+  uploadBundleButton.disabled = true;
+  downloadBundleButton.disabled = true;
+  bundleSummary.textContent = "No bundle built yet.";
 }
 
 function setStatus(message: string): void {

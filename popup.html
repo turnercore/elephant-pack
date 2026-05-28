@@ -9,7 +9,7 @@
     <main id="app">
       <header>
         <h1>Repo Context</h1>
-        <p>Build a GitHub source bundle for the current ChatGPT chat.</p>
+        <p>Build a focused GitHub source bundle for the current ChatGPT chat.</p>
       </header>
 
       <section class="panel">
@@ -34,14 +34,14 @@
           <div>
             <label for="maxBytes">Bundle cap</label>
             <select id="maxBytes">
-              <option value="1000000">1 MB</option>
-              <option value="2000000">2 MB</option>
-              <option value="4000000" selected>4 MB</option>
-              <option value="8000000">8 MB</option>
-              <option value="16000000">16 MB</option>
+              <option value="1000000" selected>Focused · 1 MB</option>
+              <option value="2000000">Standard · 2 MB</option>
+              <option value="4000000">Deep · 4 MB</option>
+              <option value="8000000">Large · 8 MB</option>
             </select>
           </div>
         </div>
+        <p class="hint">Smaller bundles are usually better for one-pass review. Large bundles may upload but not all content will fit active model context.</p>
 
         <div class="actions">
           <button id="detectBranch" type="button">Detect branch</button>
@@ -55,6 +55,7 @@
           <button id="uploadBundle" type="button" disabled>Upload to ChatGPT</button>
           <button id="downloadBundle" type="button" disabled>Download</button>
         </div>
+        <p class="hint">Direct upload depends on ChatGPT page internals. Download is the reliable fallback.</p>
       </section>
 
       <pre id="status" aria-live="polite"></pre>

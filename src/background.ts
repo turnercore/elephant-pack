@@ -1,5 +1,5 @@
 import { buildMarkdownBundle } from "./bundleBuilder";
-import { fetchRepoArchiveFiles, fetchRepoMetadata } from "./github";
+import { fetchRepoContextFiles, fetchRepoMetadata } from "./github";
 import { parseRepoInput } from "./repoInput";
 import type { BackgroundRequest } from "./types";
 
@@ -39,12 +39,15 @@ async function handleMessage(request: BackgroundRequest): Promise<Record<string,
       const token = await getToken();
       const metadata = await fetchRepoMetadata(repo, token);
       const ref = request.payload.ref?.trim() || metadata.defaultBranch;
-      const files = await fetchRepoArchiveFiles(repo, ref, token);
+      const repoFiles = await fetchRepoContextFiles(repo, ref, token, request.payload.maxBytes);
       const bundle = buildMarkdownBundle({
         metadata,
         ref,
-        files,
-        maxBytes: request.payload.maxBytes
+        files: repoFiles.files,
+        maxBytes: request.payload.maxBytes,
+        treePaths: repoFiles.treePaths,
+        preSkipped: repoFiles.skipped,
+        warnings: repoFiles.warnings
       });
       return { bundle };
     }

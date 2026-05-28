@@ -54,4 +54,16 @@ describe("buildMarkdownBundle", () => {
     expect(result.includedCount).toBe(0);
     expect(result.skippedCount).toBe(1);
   });
+
+  it("escapes nested markdown fences in source files", () => {
+    const result = buildMarkdownBundle({
+      metadata,
+      ref: "main",
+      maxBytes: 100_000,
+      generatedAt: "2026-05-28T12:00:00.000Z",
+      files: [file("README.md", "Example\n```ts\nconst value = 1;\n```")]
+    });
+
+    expect(result.content).toContain("``\\`ts");
+  });
 });
