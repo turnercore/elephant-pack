@@ -1,0 +1,22 @@
+{
+  "name": "upload-repo-to-chatgpt",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Arc/Chrome extension that packages GitHub repositories into ChatGPT-friendly source context bundles.",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "dev": "vite build --watch"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.0",
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
+  }
+}

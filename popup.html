@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Repo to ChatGPT</title>
+  </head>
+  <body>
+    <main id="app">
+      <header>
+        <h1>Repo Context</h1>
+        <p>Build a GitHub source bundle for the current ChatGPT chat.</p>
+      </header>
+
+      <section class="panel">
+        <label for="token">GitHub token</label>
+        <div class="token-row">
+          <input id="token" type="password" autocomplete="off" placeholder="Fine-grained PAT with Contents: read" />
+          <button id="saveToken" type="button">Save</button>
+          <button id="clearToken" type="button">Clear</button>
+        </div>
+        <p id="tokenStatus" class="hint"></p>
+      </section>
+
+      <section class="panel">
+        <label for="repo">Repository</label>
+        <input id="repo" type="text" placeholder="owner/repo or https://github.com/owner/repo" />
+
+        <div class="grid">
+          <div>
+            <label for="ref">Branch, tag, or SHA</label>
+            <input id="ref" type="text" placeholder="Default branch" />
+          </div>
+          <div>
+            <label for="maxBytes">Bundle cap</label>
+            <select id="maxBytes">
+              <option value="1000000">1 MB</option>
+              <option value="2000000">2 MB</option>
+              <option value="4000000" selected>4 MB</option>
+              <option value="8000000">8 MB</option>
+              <option value="16000000">16 MB</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="detectBranch" type="button">Detect branch</button>
+          <button id="buildBundle" type="button" class="primary">Build bundle</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div id="bundleSummary" class="summary">No bundle built yet.</div>
+        <div class="actions">
+          <button id="uploadBundle" type="button" disabled>Upload to ChatGPT</button>
+          <button id="downloadBundle" type="button" disabled>Download</button>
+        </div>
+      </section>
+
+      <pre id="status" aria-live="polite"></pre>
+    </main>
+    <script type="module" src="/src/popup.ts"></script>
+  </body>
+</html>

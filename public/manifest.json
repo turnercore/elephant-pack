@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Repo Context Uploader for ChatGPT",
+  "version": "0.1.0",
+  "description": "Build a GitHub repo source context bundle and attach it to ChatGPT.",
+  "action": {
+    "default_title": "Repo Context",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["contentScript.js"]
+    }
+  ],
+  "permissions": ["activeTab", "downloads", "scripting", "storage"],
+  "host_permissions": [
+    "https://api.github.com/*",
+    "https://codeload.github.com/*",
+    "https://github.com/*",
+    "https://chatgpt.com/*"
+  ]
+}
