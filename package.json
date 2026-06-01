@@ -1,9 +1,9 @@
 {
-  "name": "upload-repo-to-chatgpt",
-  "version": "0.2.0",
+  "name": "elephant-pack",
+  "version": "0.5.4",
   "private": true,
   "type": "module",
-  "description": "Arc/Chrome extension that packages GitHub repositories into ChatGPT-friendly source context bundles.",
+  "description": "Browser extension that packages GitHub and Forgejo repositories into ChatGPT-ready source context bundles.",
   "scripts": {
     "prebuild": "node scripts/generate-icons.mjs",
     "build": "tsc --noEmit && vite build",

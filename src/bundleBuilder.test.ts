@@ -18,8 +18,8 @@ function file(path: string, content: string): ArchiveFile {
 }
 
 describe("buildMarkdownBundle", () => {
-  it("includes source content and skips vendor/build noise", () => {
-    const result = buildMarkdownBundle({
+  it("includes source content and skips vendor/build noise", async () => {
+    const result = await buildMarkdownBundle({
       metadata,
       ref: "feature/test",
       maxBytes: 100_000,
@@ -32,17 +32,17 @@ describe("buildMarkdownBundle", () => {
       ]
     });
 
-    expect(result.filename).toBe("turnercore-demo-feature-test-chatgpt-context.md");
-    expect(result.content).toContain("### README.md");
-    expect(result.content).toContain("### src/app.ts");
+    expect(result.filename).toBe("turnercore-demo-feature-test-code_docs-chatgpt-context.md");
+    expect(result.content).toContain("## File: README.md");
+    expect(result.content).toContain("## File: src/app.ts");
     expect(result.content).toContain("node_modules/pkg/index.js");
-    expect(result.content).toContain("excluded directory: node_modules");
+    expect(result.content).toContain("vendor/dependency directory");
     expect(result.includedCount).toBe(2);
     expect(result.skippedCount).toBe(2);
   });
 
-  it("records files skipped by bundle cap", () => {
-    const result = buildMarkdownBundle({
+  it("records files skipped by bundle cap", async () => {
+    const result = await buildMarkdownBundle({
       metadata,
       ref: "main",
       maxBytes: 700,
@@ -55,8 +55,8 @@ describe("buildMarkdownBundle", () => {
     expect(result.skippedCount).toBe(1);
   });
 
-  it("escapes nested markdown fences in source files", () => {
-    const result = buildMarkdownBundle({
+  it("escapes nested markdown fences in source files", async () => {
+    const result = await buildMarkdownBundle({
       metadata,
       ref: "main",
       maxBytes: 100_000,

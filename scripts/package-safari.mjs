@@ -4,8 +4,8 @@ import { spawnSync } from "node:child_process";
 
 const root = resolve(import.meta.dirname, "..");
 const projectLocation = resolve(root, "safari");
-const appName = "Repo Context Uploader";
-const bundleIdentifier = "com.elephanthand.Repo-Context-Uploader";
+const appName = "Elephant Pack";
+const bundleIdentifier = "com.elephanthand.Elephant-Pack";
 
 rmSync(projectLocation, { recursive: true, force: true });
 

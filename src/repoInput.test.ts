@@ -10,8 +10,21 @@ describe("parseRepoInput", () => {
     expect(parseRepoInput("https://github.com/openai/codex.git")).toEqual({ owner: "openai", repo: "codex" });
   });
 
+  it("parses Forgejo URLs for the configured instance", () => {
+    expect(parseRepoInput("https://forge.example.com/owner/demo.git", { provider: "forgejo", forgejoBaseUrl: "https://forge.example.com" })).toEqual({
+      owner: "owner",
+      repo: "demo"
+    });
+  });
+
   it("rejects non-GitHub URLs", () => {
     expect(() => parseRepoInput("https://example.com/openai/codex")).toThrow("Only github.com");
+  });
+
+  it("rejects URLs from a different Forgejo instance", () => {
+    expect(() => parseRepoInput("https://other.example.com/owner/demo", { provider: "forgejo", forgejoBaseUrl: "https://forge.example.com" })).toThrow(
+      "Only forge.example.com"
+    );
   });
 });
 

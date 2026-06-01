@@ -1,8 +1,42 @@
-# Repo Context Uploader for ChatGPT
+# Elephant Pack
 
-A Manifest V3 extension for Arc/Chrome and Safari that turns a GitHub repository into a ChatGPT-friendly Markdown source bundle.
+A Manifest V3 extension for Arc/Chrome and Safari that turns a GitHub or Forgejo repository into a ChatGPT-friendly Markdown source bundle.
 
-The extension is meant for cases where ChatGPT's GitHub connector is unavailable, unreliable, or too broad for the specific task. It fetches a repository file tree from the GitHub API, selects high-signal text files, writes a structured Markdown context bundle, and attempts to attach that bundle to the active ChatGPT conversation.
+The extension is meant for cases where ChatGPT's repository connectors are unavailable, unreliable, or too broad for the specific task. It fetches a repository file tree from the selected source API, selects high-signal text files, writes a structured Markdown context bundle, and attempts to attach that bundle to the active ChatGPT conversation.
+
+## What changed in 0.5.4
+
+- Uses Forgejo query-token auth for API reads to avoid Safari's failing authorization-header preflight.
+
+## What changed in 0.5.3
+
+- Adds clearer Safari diagnostics when Forgejo API access is blocked by extension site permissions.
+
+## What changed in 0.5.2
+
+- Uses the Elephant Pack artwork as the Chrome and Safari extension icon/logo.
+
+## What changed in 0.5.1
+
+- Makes the settings control a selected-state toggle that opens and closes the settings view.
+
+## What changed in 0.5.0
+
+- Renames the extension and Safari app to Elephant Pack.
+- Renames the npm package to `elephant-pack`.
+
+## What changed in 0.4.0
+
+- Adds settings-level GitHub/Forgejo source selection with separate saved tokens and a Forgejo instance URL.
+- Defaults Forgejo to `https://forge.elephanthand.com` and limits extension host permission to that instance.
+
+## What changed in 0.3.0
+
+- Adds persistent popup draft state and restores the last generated bundle after reopening the popup.
+- Adds collapsed saved-token UX with Replace/Clear actions.
+- Adds branch listing with manual tag/SHA fallback.
+- Replaces size-only bundle levels with intent-based bundle profiles.
+- Adds patch-ready bundle metadata: manifest, annotated inventory, resolved commit/tree SHAs, line counts, hashes, and line-numbered file blocks.
 
 ## What changed in 0.2.0
 
@@ -18,40 +52,45 @@ The extension is meant for cases where ChatGPT's GitHub connector is unavailable
 ## Features
 
 - Works from a `https://chatgpt.com/` tab.
-- Accepts `owner/repo` or a GitHub repo URL.
-- Supports public repos and private repos through a GitHub personal access token.
+- Accepts `owner/repo` or a repository URL for the selected source.
+- Supports GitHub and Forgejo, with separate locally stored API tokens.
 - Detects the repo default branch, with manual branch/tag/SHA override.
+- Loads repo branches into a selector, while preserving manual tag/SHA entry for advanced refs.
+- Restores popup draft state and the last generated bundle after the popup closes.
 - Fetches repository trees first, then downloads only selected file blobs.
+- Uses intent-based bundle profiles: Map only, Core code, Code + docs, All useful text, All safe text + hidden, and Forensic inventory.
 - Prioritizes `AGENTS.md`, README files, package/project manifests, config, `src`, `app`, `lib`, tests, docs, and scripts.
 - Excludes common noisy paths such as `node_modules`, `dist`, `build`, `.next`, `.cache`, `Library`, `Temp`, `obj`, and binary/archive files.
 - Excludes likely secret files such as `.env`, `.env.local`, private key formats, and credential filenames. Example/sample env files can still be included.
-- Adds skipped/omitted-file summaries so ChatGPT can see what was intentionally left out.
+- Adds a machine-readable manifest, annotated inventory, line counts, content hashes, and skipped/omitted-file summaries so ChatGPT can see what was intentionally left out.
 - Falls back to downloading the bundle if direct ChatGPT attachment is blocked.
 
-## GitHub Token
+## Source Tokens
 
-For private repos, create a fine-grained GitHub personal access token with:
+For private repos, create a token for the selected source.
+
+For GitHub, use a fine-grained personal access token with:
 
 - Repository access: only the repos you want to upload.
 - Repository permissions: `Contents: read`.
 
-The token is stored locally in `chrome.storage.local`. It is not written into generated bundles, logs, or filenames.
+For Forgejo, set the Forgejo instance URL in settings. This build defaults to `https://forge.elephanthand.com` and requests host permission only for that instance. Generate an API token from the Forgejo instance's Settings > Applications page with repository read access.
 
-A token is also useful for public repos because unauthenticated GitHub API rate limits are much lower. Without a token, the extension intentionally fetches fewer file blobs.
+Tokens are stored locally in `chrome.storage.local`. They are not written into generated bundles, logs, or filenames. Tokens are also useful for public repos because unauthenticated API rate limits can be much lower.
 
 ## Bundle Strategy
 
-The generated Markdown bundle is designed for ChatGPT code review and debugging:
+The generated Markdown bundle is designed for ChatGPT code review, debugging, and patch planning:
 
 1. Metadata and suggested use.
-2. Repository directory tree.
-3. Build warnings, when applicable.
-4. Bundle summary and skipped/omitted-file summary.
-5. Included-file index with sizes and truncation flags.
-6. Source file contents in fenced code blocks.
-7. A capped skipped-file detail list.
+2. Repository snapshot with resolved commit and tree SHA.
+3. Architecture map, annotated directory tree, and build warnings.
+4. Bundle summary, security summary, and included-file index.
+5. Machine-readable JSON manifest and compact inventory.
+6. Source file contents with `repo-file` metadata, hashes, line counts, and optional line numbers.
+7. A capped skipped-file detail list with omission reasons.
 
-The default **Focused · 1 MB** cap is deliberately conservative for one-pass review. Larger files may upload successfully, but smaller focused bundles are generally easier for a model to use in active context.
+The default profile is **Code + docs** with a **4 MB** cap and line numbers enabled. Profiles control which files are eligible; the cap only constrains final bundle size. Binary and secret-like files remain metadata-only or omitted rather than included as content.
 
 ## Development
 
@@ -81,7 +120,7 @@ This command:
 1. Builds the normal extension into `dist/`.
 2. Copies it into `dist-safari/`.
 3. Removes Safari-unsupported manifest keys from the Safari copy (`background.type` and the unused `downloads` permission).
-4. Packages the result into `safari/Repo Context Uploader/Repo Context Uploader.xcodeproj`.
+4. Packages the result into `safari/Elephant Pack/Elephant Pack.xcodeproj`.
 
 Open the generated Xcode project, select a signing team, then build and run the macOS app. In Safari, enable the extension from **Settings > Extensions**.
 
