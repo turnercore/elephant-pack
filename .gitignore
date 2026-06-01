@@ -1,4 +1,7 @@
 node_modules/
 dist/
+dist-safari/
 .DS_Store
 *.log
+xcuserdata/
+*.xcuserstate

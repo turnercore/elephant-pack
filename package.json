@@ -5,7 +5,10 @@
   "type": "module",
   "description": "Arc/Chrome extension that packages GitHub repositories into ChatGPT-friendly source context bundles.",
   "scripts": {
+    "prebuild": "node scripts/generate-icons.mjs",
     "build": "tsc --noEmit && vite build",
+    "build:safari": "npm run build && node scripts/prepare-safari-dist.mjs",
+    "package:safari": "npm run build:safari && node scripts/package-safari.mjs",
     "test": "vitest run",
     "dev": "vite build --watch"
   },

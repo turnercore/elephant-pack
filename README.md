@@ -1,6 +1,6 @@
 # Repo Context Uploader for ChatGPT
 
-A Manifest V3 extension for Arc/Chrome that turns a GitHub repository into a ChatGPT-friendly Markdown source bundle.
+A Manifest V3 extension for Arc/Chrome and Safari that turns a GitHub repository into a ChatGPT-friendly Markdown source bundle.
 
 The extension is meant for cases where ChatGPT's GitHub connector is unavailable, unreliable, or too broad for the specific task. It fetches a repository file tree from the GitHub API, selects high-signal text files, writes a structured Markdown context bundle, and attempts to attach that bundle to the active ChatGPT conversation.
 
@@ -67,6 +67,25 @@ Load the built extension from `dist/`:
 2. Enable developer mode.
 3. Choose **Load unpacked**.
 4. Select this repo's `dist/` folder.
+
+### Safari
+
+Safari cannot load this folder directly as an unpacked Chrome extension. Build the Safari-compatible extension bundle and Xcode wrapper with:
+
+```bash
+npm run package:safari
+```
+
+This command:
+
+1. Builds the normal extension into `dist/`.
+2. Copies it into `dist-safari/`.
+3. Removes Safari-unsupported manifest keys from the Safari copy (`background.type` and the unused `downloads` permission).
+4. Packages the result into `safari/Repo Context Uploader/Repo Context Uploader.xcodeproj`.
+
+Open the generated Xcode project, select a signing team, then build and run the macOS app. In Safari, enable the extension from **Settings > Extensions**.
+
+The committed Safari project includes copied web extension resources, but rerun `npm run package:safari` after changing source files so the Xcode wrapper receives a fresh build.
 
 ## Usage
 
