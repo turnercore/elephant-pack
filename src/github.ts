@@ -85,6 +85,7 @@ interface GitHubTagListResponse {
 }
 
 interface GitHubRefResponse {
+  ref?: string;
   object: {
     sha: string;
     type: string;
@@ -294,7 +295,7 @@ async function resolveGitObjectToCommit(
 }
 
 function commitResponseToResolved(data: GitHubRepoCommitResponse | GitHubGitCommitResponse, api: ApiContext): ResolvedCommit {
-  const treeSha = data.tree?.sha ?? data.commit?.tree.sha;
+  const treeSha = data.tree?.sha ?? data.commit?.tree?.sha;
   if (!treeSha) throw new Error(`${api.label} commit response did not include a tree SHA.`);
   return { sha: data.sha, treeSha };
 }
@@ -302,7 +303,27 @@ function commitResponseToResolved(data: GitHubRepoCommitResponse | GitHubGitComm
 async function fetchGitRef(repo: RepoRef, ref: string, token: string | undefined, api: ApiContext): Promise<GitHubRefResponse> {
   const refPath = api.provider === "forgejo" ? "git/refs" : "git/ref";
   const response = await providerFetch(`${api.base}/repos/${encodeURIComponent(repo.owner)}/${encodeURIComponent(repo.repo)}/${refPath}/${pathEncodeRef(ref)}`, token, api);
-  return (await response.json()) as GitHubRefResponse;
+  return normalizeGitRefResponse(await response.json(), ref, api);
+}
+
+function normalizeGitRefResponse(data: unknown, requestedRef: string, api: ApiContext): GitHubRefResponse {
+  const response = Array.isArray(data)
+    ? data.find((entry) => isGitRefResponse(entry) && entry.ref === `refs/${requestedRef}`) ?? data.find(isGitRefResponse)
+    : data;
+
+  if (!isGitRefResponse(response)) {
+    throw new Error(`${api.label} ref response did not include a commit or tag object for ${requestedRef}.`);
+  }
+
+  return response;
+}
+
+function isGitRefResponse(value: unknown): value is GitHubRefResponse {
+  if (typeof value !== "object" || value === null || !("object" in value)) return false;
+  const object = (value as { object?: unknown }).object;
+  if (typeof object !== "object" || object === null) return false;
+  const candidate = object as { sha?: unknown; type?: unknown; url?: unknown };
+  return typeof candidate.sha === "string" && typeof candidate.type === "string" && (candidate.url === undefined || typeof candidate.url === "string");
 }
 
 async function fetchTree(repo: RepoRef, treeSha: string, token: string | undefined, api: ApiContext): Promise<GitHubTreeResponse> {

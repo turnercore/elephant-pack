@@ -2,7 +2,7 @@
 //  SafariWebExtensionHandler.swift
 //  Elephant Pack Extension
 //
-//  Created by Turner Monroe on 6/1/26.
+//  Created by Turner Monroe on 6/2/26.
 //
 
 import SafariServices

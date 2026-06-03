@@ -1,6 +1,6 @@
 {
   "name": "elephant-pack",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "private": true,
   "type": "module",
   "description": "Browser extension that packages GitHub and Forgejo repositories into ChatGPT-ready source context bundles.",

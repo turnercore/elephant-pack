@@ -142,6 +142,56 @@ describe("fetchRepoContextFiles", () => {
     expect(String(commitUrl)).toContain("access_token=forgejo-token");
     expect(commitInit).toEqual(expect.objectContaining({ headers: expect.not.objectContaining({ Authorization: expect.any(String) }) }));
   });
+
+  it("accepts Forgejo ref endpoints that return matching ref arrays", async () => {
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/repos/owner/demo/git/refs/heads/main")) {
+        return Promise.resolve(
+          jsonResponse([
+            { ref: "refs/heads/main-old", object: { type: "commit", sha: "old-sha", url: "https://forge.example.com/api/v1/repos/owner/demo/git/commits/old-sha" } },
+            { ref: "refs/heads/main", object: { type: "commit", sha: "commit-sha", url: "https://forge.example.com/api/v1/repos/owner/demo/git/commits/commit-sha" } }
+          ])
+        );
+      }
+      if (url.includes("/api/v1/repos/owner/demo/git/commits/commit-sha")) {
+        return Promise.resolve(jsonResponse({ sha: "commit-sha", commit: { tree: { sha: "tree-sha" } } }));
+      }
+      if (url.includes("/api/v1/repos/owner/demo/git/trees/tree-sha")) {
+        return Promise.resolve(jsonResponse({ truncated: false, tree: [] }));
+      }
+      return Promise.resolve(notFound());
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchRepoContextFiles(repo, "main", "forgejo-token", 1_000_000, "code_docs", {
+      provider: "forgejo",
+      forgejoBaseUrl: "https://forge.example.com"
+    });
+
+    expect(result.resolvedCommitSha).toBe("commit-sha");
+  });
+
+  it("reports malformed Forgejo ref responses without reading undefined type", async () => {
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/repos/owner/demo/git/refs/heads/main") || url.includes("/api/v1/repos/owner/demo/git/refs/tags/main")) {
+        return Promise.resolve(jsonResponse({ object: null }));
+      }
+      if (url.includes("/api/v1/repos/owner/demo/git/commits/main")) {
+        return Promise.resolve(jsonResponse({ sha: "commit-sha", commit: {} }));
+      }
+      return Promise.resolve(notFound());
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      fetchRepoContextFiles(repo, "main", "forgejo-token", 1_000_000, "code_docs", {
+        provider: "forgejo",
+        forgejoBaseUrl: "https://forge.example.com"
+      })
+    ).rejects.toThrow("Forgejo commit response did not include a tree SHA.");
+  });
 });
 
 describe("fetchRepoBranches", () => {

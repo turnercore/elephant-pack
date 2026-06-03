@@ -13,7 +13,7 @@ const DEFAULT_BUNDLE_PROFILE = "code_docs";
 const DEFAULT_MAX_BYTES = 4_000_000;
 const DEFAULT_PROVIDER_SETTINGS: ProviderSettings = { provider: "github", forgejoBaseUrl: "https://forge.elephanthand.com" };
 
-chrome.runtime.onMessage.addListener((request: BackgroundRequest, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request: unknown, _sender, sendResponse) => {
   void handleMessage(request).then(
     (response) => sendResponse({ ok: true, ...response }),
     (error: unknown) => sendResponse({ ok: false, error: error instanceof Error ? error.message : String(error) })
@@ -21,7 +21,11 @@ chrome.runtime.onMessage.addListener((request: BackgroundRequest, _sender, sendR
   return true;
 });
 
-async function handleMessage(request: BackgroundRequest): Promise<Record<string, unknown>> {
+async function handleMessage(request: unknown): Promise<Record<string, unknown>> {
+  if (!isBackgroundRequest(request)) {
+    throw new Error("Invalid background request.");
+  }
+
   switch (request.type) {
     case "GET_TOKEN_STATUS": {
       const [githubToken, forgejoToken] = await Promise.all([getToken("github"), getToken("forgejo")]);
@@ -90,6 +94,10 @@ async function handleMessage(request: BackgroundRequest): Promise<Record<string,
     default:
       throw new Error("Unknown background request.");
   }
+}
+
+function isBackgroundRequest(request: unknown): request is BackgroundRequest {
+  return typeof request === "object" && request !== null && "type" in request && typeof request.type === "string";
 }
 
 async function getToken(provider: RepoProvider): Promise<string | undefined> {

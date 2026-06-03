@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Elephant Pack",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Build a focused GitHub or Forgejo source bundle and attach it to ChatGPT.",
   "icons": {
     "16": "icons/icon-16.png",
